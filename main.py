@@ -14,8 +14,17 @@ def main():
     print(f"Screen width: {SCREEN_WIDTH}")
     print(f"Screen height: {SCREEN_HEIGHT}")
 
+    # --- Crear grupos ---
+    updatable = pygame.sprite.Group()
+    drawable = pygame.sprite.Group()
+
+    # --- Asignar contenedores a la clase Player ---
+    Player.containers = (updatable, drawable)
+
+    # --- Crear la instancia del jugador ---
     player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
+    # --- Game loop ---
     while True:
         log_state()
 
@@ -24,11 +33,20 @@ def main():
                 return
 
         screen.fill("black")
-        player.draw(screen)
+
+        # Actualizar todos los objetos del grupo "updatable"
+        for obj in updatable:
+            obj.update(dt)
+
+        # Dibujar todos los objetos del grupo "drawable"
+        for obj in drawable:
+            obj.draw(screen)
+
         pygame.display.flip()
 
-        # Limitar a 60 FPS y obtener delta time
+        # Limitar FPS y calcular delta time
         dt = clock.tick(60) / 1000
+
 
 if __name__ == "__main__":
     main()
