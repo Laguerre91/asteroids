@@ -3,59 +3,68 @@ from circleshape import CircleShape
 from constants import *
 from shot import Shot
 
+
 class Player(CircleShape):
     def __init__(self, x, y):
         super().__init__(x, y, radius=PLAYER_RADIUS)
         self.rotation = 0
         self.shoot_cooldown = 0
+
     def draw(self, screen):
         pygame.draw.polygon(screen, (255, 255, 255), self.triangle(), LINE_WIDTH)
 
     def update(self, dt):
-        # Update player position based on velocity
-        self.position += self.velocity * dt
-    
-    # in the Player class
+        keys = pygame.key.get_pressed()
+
+        # Rotación
+        if keys[pygame.K_a]:
+            self.rotate(-dt)
+        if keys[pygame.K_d]:
+            self.rotate(dt)
+
+        # Movimiento
+        if keys[pygame.K_w]:
+            self.move(dt)
+        if keys[pygame.K_s]:
+            self.move(-dt)
+
+        # Disparo
+        if keys[pygame.K_SPACE]:
+            self.shoot()
+
+        # Reducir cooldown con el tiempo
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= dt
+
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
         right = pygame.Vector2(0, 1).rotate(self.rotation + 90) * self.radius / 1.5
+
         a = self.position + forward * self.radius
         b = self.position - forward * self.radius - right
         c = self.position - forward * self.radius + right
+
         return [a, b, c]
 
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt
 
-    def update(self, dt):
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_a]:
-            self.rotate(-dt)
-        if keys[pygame.K_d]:
-            self.rotate(dt)
-        if keys[pygame.K_w]:
-            self.move(dt)        # mover hacia adelante
-        if keys[pygame.K_s]:
-            self.move(-dt)
-        if keys[pygame.K_SPACE]:
-            self.shoot()   
-
     def move(self, dt):
-        # Crear vector unitario apuntando "hacia abajo"
         unit_vector = pygame.Vector2(0, 1)
-
-        # Rotar para que apunte en la dirección del jugador
         rotated_vector = unit_vector.rotate(self.rotation)
-
-        # Escalar por velocidad y delta time
-        rotated_with_speed_vector = rotated_vector * PLAYER_SPEED * dt
-
-        # Mover al jugador
-        self.position += rotated_with_speed_vector
+        movement = rotated_vector * PLAYER_SPEED * dt
+        self.position += movement
 
     def shoot(self):
-        Shot(self.position.x, self.position.y, self.rotation)
-        velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
-        Shot(self.position.x, self.position.y, self.rotation).velocity = velocity
-            
+        if self.shoot_cooldown > 0:
+            return
+
+        # Reiniciar cooldown
+        self.shoot_cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
+
+        # Crear disparo UNA sola vez
+        shot = Shot(self.position.x, self.position.y, self.rotation)
+
+        # Asignar velocidad
+        direction = pygame.Vector2(0, 1).rotate(self.rotation)
+        shot.velocity = direction * PLAYER_SHOOT_SPEED
